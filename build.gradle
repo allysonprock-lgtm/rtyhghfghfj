@@ -1,0 +1,49 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": inputs.properties.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = "UTF-8"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+// Runs the Minecraft-independent analysis tests (storage clustering, damage analysis, three-way classification,
+// Discord payloads, reconstructions). Outputs sample PNGs/JSON into build/selftest.
+tasks.register('selfTest', JavaExec) {
+    group = 'verification'
+    description = 'Runs the plain-Java analysis self tests'
+    dependsOn classes
+    classpath = sourceSets.main.output
+    mainClass = 'dev.basefinder.core.SelfTest'
+    args = [layout.buildDirectory.dir('selftest').get().asFile.path]
+    systemProperty 'java.awt.headless', 'true'
+}
